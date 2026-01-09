@@ -1,6 +1,8 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
+import json
 
 st.set_page_config(
     page_title="🤖 Euromillions Bot Pro",
@@ -49,10 +51,30 @@ except Exception as e:
 st.divider()
 
 # -----------------------------
+# Bouton réinitialiser tout
+# -----------------------------
+st.subheader("⚙️ Réinitialiser l'app")
+history_file = "data/history.json"
+
+if st.button("🔄 Réinitialiser tout", key="btn_reset"):
+    # Supprimer le budget manager
+    if "manager" in st.session_state:
+        del st.session_state.manager
+
+    # Vider l'historique
+    if os.path.exists(history_file):
+        with open(history_file, "w") as f:
+            json.dump([], f)
+
+    st.success("✅ Budget et historique remis à zéro.")
+    st.experimental_rerun()
+
+st.divider()
+
+# -----------------------------
 # Générateur de grilles intelligentes avec historique
 # -----------------------------
 st.subheader("🎯 Grilles intelligentes")
-
 try:
     from core.generator import generer_grille_intelligente
     from core.storage import sauvegarder_grille, charger_historique
@@ -162,4 +184,4 @@ except Exception as e:
     st.error(f"Erreur simulation : {e}")
 
 st.divider()
-st.info("✅ App prête à être utilisée sur Streamlit Cloud, avec budget, grilles multiples et historique.")
+st.info("✅ App prête à être utilisée sur Streamlit Cloud, avec budget, grilles multiples, historique et bouton de réinitialisation.")
