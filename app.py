@@ -38,17 +38,18 @@ if st.sidebar.button("🔄 Réinitialiser tout"):
 col_budget, col_grilles, col_simulation = st.columns([1,2,2])
 
 # -----------------------------
-# Colonne 1 : Budget stylé avec live update
+# Colonne 1 : Budget live avec compteur animé
 # -----------------------------
 with col_budget:
     st.subheader("💰 Budget")
     budget_placeholder = st.empty()  # placeholder pour le budget live
 
-# Fonction pour mettre à jour le budget dans la colonne 1
-def afficher_budget():
-    depense = manager.depense
-    restant = manager.reste()
-    progress = min(depense / manager.budget, 1.0)
+def afficher_budget(depense_actuelle=None):
+    """Affiche le budget dans la colonne Budget."""
+    if depense_actuelle is None:
+        depense_actuelle = manager.depense
+    restant = manager.budget - depense_actuelle
+    progress = min(depense_actuelle / manager.budget, 1.0)
 
     # Couleur dynamique
     if progress < 0.5:
@@ -59,7 +60,7 @@ def afficher_budget():
         color = "red"
 
     with budget_placeholder.container():
-        st.markdown(f"<h3>Dépense actuelle : {depense:.2f} €</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3>Dépense actuelle : {depense_actuelle:.2f} €</h3>", unsafe_allow_html=True)
         st.markdown(f"<h3>Budget restant : {restant:.2f} €</h3>", unsafe_allow_html=True)
         st.progress(progress)
         if progress >= 1:
@@ -82,15 +83,21 @@ with col_grilles:
         grilles = []
         for _ in range(nb_grilles):
             if manager.peut_jouer():
-                manager.jouer()  # ✅ dépense mise à jour
+                old_depense = manager.depense
+                manager.jouer()  # dépense finale mise à jour
+                new_depense = manager.depense
+
+                # Animation compteur dépense
+                for val in range(int(old_depense*100), int(new_depense*100)+1, 5):  # incréments 0,05 €
+                    afficher_budget(depense_actuelle=val/100)
+                    st.sleep(0.01)  # délai pour effet compteur
+
+                # Génération de la grille
                 nums, stars = generer_grille_intelligente()
                 grilles.append((nums, stars))
                 sauvegarder_grille(nums, stars)
 
-        # Mettre à jour le budget live
-        afficher_budget()
-
-        # Affichage des grilles générées
+        # Affichage des grilles
         if grilles:
             for i, (nums, stars) in enumerate(grilles, 1):
                 st.success(f"Grille {i}: Numéros {nums} ⭐ Étoiles {stars}")
