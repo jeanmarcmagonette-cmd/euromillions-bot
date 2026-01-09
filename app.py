@@ -82,4 +82,36 @@ try:
         st.success(f"Numéros : {nums} ⭐ Étoiles : {stars}")
 except Exception as e:
     st.error(f"Erreur générateur de grille : {e}")
+ st.divider()
+st.subheader("🎯 Grille intelligente (avec budget)")
+
+try:
+    from core.generator import generer_grille_intelligente
+    from core.budget import BudgetManager
+
+    budget_val = st.number_input(
+        "Budget mensuel (€)",
+        min_value=5,
+        max_value=200,
+        value=20,
+        key="budget_grille"
+    )
+
+    manager = BudgetManager(budget_val)
+
+    st.write(f"💸 Dépense actuelle : {manager.depense:.2f} €")
+    st.write(f"💰 Budget restant : {manager.reste():.2f} €")
+
+    if st.button("🧠 Générer une grille intelligente"):
+        if manager.peut_jouer():
+            manager.jouer()
+            nums, stars = generer_grille_intelligente()
+            st.success(f"🎟️ Numéros : {nums} ⭐ Étoiles : {stars}")
+            st.info(f"Budget restant : {manager.reste():.2f} €")
+        else:
+            st.error("🚫 Budget dépassé — génération bloquée")
+
+except Exception as e:
+    st.error(f"Erreur génération intelligente : {e}")
+   
 
