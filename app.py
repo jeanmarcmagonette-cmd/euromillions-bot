@@ -146,4 +146,41 @@ try:
         ax.set_ylabel("Occurrences")
         st.pyplot(fig)
     else:
-        st.info("Pas encore assez de données
+        st.info("Pas encore assez de données pour afficher des stats.")
+except Exception as e:
+    st.error(f"Erreur statistiques : {e}")
+
+st.divider()
+
+# -----------------------------
+# Simulation Monte Carlo
+# -----------------------------
+st.subheader("🧪 Simulation Monte Carlo")
+try:
+    from ai.simulation import simuler
+
+    nb = st.slider(
+        "Nombre de grilles simulées pour la simulation",
+        min_value=1000,
+        max_value=100_000,
+        step=1000,
+        value=10_000,
+        key="slider_simulation"
+    )
+
+    if st.button("🚀 Lancer simulation", key="btn_simuler"):
+        gains, cout = simuler(nb)
+        col1, col2, col3 = st.columns(3)
+        col1.metric("💸 Coût total", f"{cout:,.2f} €")
+        col2.metric("🏆 Gains simulés", f"{gains:,.2f} €")
+        col3.metric("📉 Résultat net", f"{gains - cout:,.2f} €")
+        st.warning(
+            "Cette simulation montre l'espérance négative du jeu.\n"
+            "Même avec beaucoup de grilles, perdre est la norme."
+        )
+
+except Exception as e:
+    st.error(f"Erreur simulation : {e}")
+
+st.divider()
+st.info("✅ App prête à être utilisée sur Streamlit Cloud, avec budget, grilles multiples, historique et bouton de réinitialisation.")
