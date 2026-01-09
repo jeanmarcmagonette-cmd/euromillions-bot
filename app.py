@@ -15,8 +15,16 @@ st.divider()
 st.subheader("💰 Budget")
 try:
     from core.budget import BudgetManager
-    budget_val = st.number_input("Budget mensuel (€)", min_value=5, max_value=200, value=20)
+
+    budget_val = st.number_input(
+        "Budget mensuel (€)",
+        min_value=5,
+        max_value=200,
+        value=20,
+        key="budget_input"
+    )
     manager = BudgetManager(budget_val)
+
     st.write(f"Dépenses actuelles : {manager.depense:.2f} €")
     st.write(f"Budget restant : {manager.reste():.2f} €")
 
@@ -25,7 +33,7 @@ try:
     if progress >= 1:
         st.error("🚫 Budget mensuel atteint")
 except Exception as e:
-    st.error(f"Module BudgetManager manquant ou erreur : {e}")
+    st.error(f"Erreur BudgetManager : {e}")
     BudgetManager = None
 
 st.divider()
@@ -61,7 +69,6 @@ try:
         st.write(f"💸 Coût total : {cout:,.2f} €")
         st.write(f"🏆 Gains simulés : {gains:,.2f} €")
         st.write(f"📉 Résultat net : {gains - cout:,.2f} €")
-
         st.warning(
             "Cette simulation montre l'espérance négative du jeu.\n"
             "Même avec beaucoup de grilles, perdre est la norme."
@@ -70,34 +77,18 @@ except Exception as e:
     st.error(f"Erreur dans la simulation : {e}")
 
 st.divider()
-st.info("✅ L'app est prête à être déployée sur Streamlit Cloud et ne devrait jamais afficher une page blanche.")
-st.divider()
-st.subheader("🎲 Générateur de grilles")
 
-try:
-    from core.generator import generer_grille
-
-    if st.button("🎰 Générer une grille"):
-        nums, stars = generer_grille()
-        st.success(f"Numéros : {nums} ⭐ Étoiles : {stars}")
-except Exception as e:
-    st.error(f"Erreur générateur de grille : {e}")
- st.divider()
+# --- Générateur de grilles intelligente ---
 st.subheader("🎯 Grille intelligente (avec budget)")
 
 try:
     from core.generator import generer_grille_intelligente
     from core.budget import BudgetManager
 
-    budget_val = st.number_input(
-        "Budget mensuel (€)",
-        min_value=5,
-        max_value=200,
-        value=20,
-        key="budget_grille"
-    )
-
-    manager = BudgetManager(budget_val)
+    # on réutilise manager existant
+    if manager is None:
+        budget_val = 20
+        manager = BudgetManager(budget_val)
 
     st.write(f"💸 Dépense actuelle : {manager.depense:.2f} €")
     st.write(f"💰 Budget restant : {manager.reste():.2f} €")
@@ -113,5 +104,7 @@ try:
 
 except Exception as e:
     st.error(f"Erreur génération intelligente : {e}")
-   
+
+st.divider()
+st.info("✅ L'app est prête à être déployée sur Streamlit Cloud et ne devrait jamais afficher une page blanche.")
 
