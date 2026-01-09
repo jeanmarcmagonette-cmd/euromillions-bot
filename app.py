@@ -42,32 +42,31 @@ col_budget, col_grilles, col_simulation = st.columns([1,2,2])
 # -----------------------------
 with col_budget:
     st.subheader("💰 Budget")
-    
-    # Placeholder pour affichage dynamique
-    budget_placeholder = st.empty()
+    budget_placeholder = st.empty()  # placeholder pour le budget live
 
-    def afficher_budget():
-        depense = manager.depense
-        restant = manager.reste()
-        progress = min(depense / manager.budget, 1.0)
+# Fonction pour mettre à jour le budget dans la colonne 1
+def afficher_budget():
+    depense = manager.depense
+    restant = manager.reste()
+    progress = min(depense / manager.budget, 1.0)
 
-        # Couleur dynamique
-        if progress < 0.5:
-            color = "green"
-        elif progress < 0.8:
-            color = "orange"
-        else:
-            color = "red"
+    # Couleur dynamique
+    if progress < 0.5:
+        color = "green"
+    elif progress < 0.8:
+        color = "orange"
+    else:
+        color = "red"
 
-        with budget_placeholder.container():
-            st.markdown(f"<h3>Dépense actuelle : {depense:.2f} €</h3>", unsafe_allow_html=True)
-            st.markdown(f"<h3>Budget restant : {restant:.2f} €</h3>", unsafe_allow_html=True)
-            st.progress(progress)
-            if progress >= 1:
-                st.error("🚫 Budget mensuel atteint")
+    with budget_placeholder.container():
+        st.markdown(f"<h3>Dépense actuelle : {depense:.2f} €</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3>Budget restant : {restant:.2f} €</h3>", unsafe_allow_html=True)
+        st.progress(progress)
+        if progress >= 1:
+            st.error("🚫 Budget mensuel atteint")
 
-    # Affichage initial
-    afficher_budget()
+# Affichage initial
+afficher_budget()
 
 # -----------------------------
 # Colonne 2 : Grilles + Historique
@@ -78,19 +77,20 @@ with col_grilles:
     from core.storage import sauvegarder_grille, charger_historique
 
     nb_grilles = st.slider("Nombre de grilles", 1, 10, 3, key="slider_nb_grilles")
-    
+
     if st.button("🧠 Générer grilles", key="btn_generer_grilles"):
         grilles = []
         for _ in range(nb_grilles):
             if manager.peut_jouer():
-                manager.jouer()  # Dépense augmente immédiatement
+                manager.jouer()  # ✅ dépense mise à jour
                 nums, stars = generer_grille_intelligente()
                 grilles.append((nums, stars))
                 sauvegarder_grille(nums, stars)
 
-        # Mise à jour live de la colonne Budget
+        # Mettre à jour le budget live
         afficher_budget()
 
+        # Affichage des grilles générées
         if grilles:
             for i, (nums, stars) in enumerate(grilles, 1):
                 st.success(f"Grille {i}: Numéros {nums} ⭐ Étoiles {stars}")
@@ -101,7 +101,7 @@ with col_grilles:
     historique = charger_historique()
     if historique:
         st.subheader("📜 Historique des grilles")
-        for g in historique[-10:][::-1]:  # dernier 10 grilles
+        for g in historique[-10:][::-1]:
             st.info(f"Numéros {g['numeros']} ⭐ Étoiles {g['etoiles']}")
         cout_total = len(historique)*2.5
         gains_total = 0
@@ -115,7 +115,7 @@ with col_grilles:
         st.info("Aucune grille jouée pour l'instant.")
 
 # -----------------------------
-# Colonne 3 : Simulation Monte Carlo + Stats stylées
+# Colonne 3 : Simulation Monte Carlo + Stats
 # -----------------------------
 with col_simulation:
     st.subheader("🧪 Simulation Monte Carlo")
@@ -128,7 +128,7 @@ with col_simulation:
         col1, col2, col3 = st.columns(3)
         col1.metric("💸 Coût total", f"{cout:,.2f} €")
         col2.metric("🏆 Gains simulés", f"{gains:,.2f} €")
-        col3.metric("📉 Résultat net", f"{gains - cout:,.2f} €",
+        col3.metric("📉 Résultat net", f"{gains - cout:.2f} €",
                     delta_color="inverse" if gains - cout < 0 else "normal")
         st.warning("Simulation Monte Carlo — l'espérance est négative.")
 
