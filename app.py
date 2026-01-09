@@ -17,6 +17,7 @@ from core.budget import BudgetManager
 
 budget_val = st.sidebar.number_input("Budget mensuel (€)", min_value=5, max_value=200, value=20)
 
+# ✅ Initialisation sécurisée dans session_state
 if "manager" not in st.session_state:
     st.session_state.manager = BudgetManager(budget_val)
 
@@ -47,9 +48,13 @@ with col_budget:
 def afficher_budget(manager=None, depense_actuelle=None):
     """Affiche le budget dans la colonne Budget"""
     if manager is None:
+        # sécurité : toujours vérifier que manager existe
+        if "manager" not in st.session_state:
+            st.session_state.manager = BudgetManager(budget_val)
         manager = st.session_state.manager
     if depense_actuelle is None:
         depense_actuelle = manager.depense
+
     restant = manager.budget - depense_actuelle
     progress = min(depense_actuelle / manager.budget, 1.0)
 
