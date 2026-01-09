@@ -11,13 +11,13 @@ st.write("Gère ton budget, génère des grilles intelligentes et simule des tir
 st.divider()
 
 # -----------------------------
-# Initialisation BudgetManager
+# Initialisation BudgetManager sécurisée
 # -----------------------------
 from core.budget import BudgetManager
 
 budget_val = st.sidebar.number_input("Budget mensuel (€)", min_value=5, max_value=200, value=20)
 
-# ✅ Initialisation sécurisée : ne jamais réécrire manager après le premier run
+# ✅ Crée manager seulement si absent
 if "manager" not in st.session_state:
     st.session_state.manager = BudgetManager(budget_val)
 
@@ -46,13 +46,18 @@ with col_budget:
     budget_placeholder = st.empty()
 
 def afficher_budget(depense_actuelle=None):
+    # ✅ Sécurisé : crée manager si absent
+    if "manager" not in st.session_state:
+        st.session_state.manager = BudgetManager(budget_val)
     manager = st.session_state.manager
+
     if depense_actuelle is None:
         depense_actuelle = manager.depense
 
     restant = manager.budget - depense_actuelle
     progress = min(depense_actuelle / manager.budget, 1.0)
 
+    # Couleur dynamique
     if progress < 0.5:
         color = "green"
     elif progress < 0.8:
@@ -60,6 +65,7 @@ def afficher_budget(depense_actuelle=None):
     else:
         color = "red"
 
+    # Affichage
     with budget_placeholder.container():
         st.markdown(f"<h3>Dépense actuelle : {depense_actuelle:.2f} €</h3>", unsafe_allow_html=True)
         st.markdown(f"<h3>Budget restant : {restant:.2f} €</h3>", unsafe_allow_html=True)
