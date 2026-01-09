@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import json
-import time  # ✅ pour l'animation compteur
+import time  # pour l'animation du compteur
 
 st.set_page_config(page_title="🤖 Euromillions Bot Pro", layout="wide")
 st.title("🤖 Euromillions Bot Pro – Version Ultra Pro")
@@ -19,7 +19,6 @@ budget_val = st.sidebar.number_input("Budget mensuel (€)", min_value=5, max_va
 
 if "manager" not in st.session_state:
     st.session_state.manager = BudgetManager(budget_val)
-manager = st.session_state.manager
 
 # -----------------------------
 # Bouton Réinitialiser
@@ -43,16 +42,17 @@ col_budget, col_grilles, col_simulation = st.columns([1,2,2])
 # -----------------------------
 with col_budget:
     st.subheader("💰 Budget")
-    budget_placeholder = st.empty()  # placeholder pour la colonne Budget
+    budget_placeholder = st.empty()
 
-def afficher_budget(depense_actuelle=None):
-    """Affiche le budget dans la colonne Budget."""
+def afficher_budget(manager=None, depense_actuelle=None):
+    """Affiche le budget dans la colonne Budget"""
+    if manager is None:
+        manager = st.session_state.manager
     if depense_actuelle is None:
         depense_actuelle = manager.depense
     restant = manager.budget - depense_actuelle
     progress = min(depense_actuelle / manager.budget, 1.0)
 
-    # Couleur dynamique
     if progress < 0.5:
         color = "green"
     elif progress < 0.8:
@@ -83,29 +83,29 @@ with col_grilles:
     if st.button("🧠 Générer grilles", key="btn_generer_grilles"):
         grilles = []
         for _ in range(nb_grilles):
-            if manager.peut_jouer():
-                old_depense = manager.depense
-                manager.jouer()  # dépense finale mise à jour
-                new_depense = manager.depense
+            if st.session_state.manager.peut_jouer():
+                old_depense = st.session_state.manager.depense
+                st.session_state.manager.jouer()
+                new_depense = st.session_state.manager.depense
 
-                # Animation compteur dépense
-                for val in range(int(old_depense*100), int(new_depense*100)+1, 5):  # incréments 0,05 €
+                # Animation du compteur
+                for val in range(int(old_depense*100), int(new_depense*100)+1, 5):
                     afficher_budget(depense_actuelle=val/100)
-                    time.sleep(0.01)  # ✅ animation avec time.sleep
+                    time.sleep(0.01)
 
                 # Génération de la grille
                 nums, stars = generer_grille_intelligente()
                 grilles.append((nums, stars))
                 sauvegarder_grille(nums, stars)
 
-        # Affichage des grilles
+        # Affichage des grilles générées
         if grilles:
             for i, (nums, stars) in enumerate(grilles, 1):
                 st.success(f"Grille {i}: Numéros {nums} ⭐ Étoiles {stars}")
         else:
             st.error("🚫 Budget dépassé — impossible de générer des grilles")
 
-    # Historique stylé
+    # Historique
     historique = charger_historique()
     if historique:
         st.subheader("📜 Historique des grilles")
@@ -140,7 +140,7 @@ with col_simulation:
                     delta_color="inverse" if gains - cout < 0 else "normal")
         st.warning("Simulation Monte Carlo — l'espérance est négative.")
 
-    # Statistiques des numéros
+    # Statistiques
     freq = frequences_numeros()
     if freq is not None and not freq.empty:
         fig, ax = plt.subplots(figsize=(8,3))
