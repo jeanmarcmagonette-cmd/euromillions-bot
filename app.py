@@ -20,7 +20,7 @@ st.subheader("💰 Budget")
 try:
     from core.budget import BudgetManager
 
-    # Budget initial
+    # Valeur initiale
     budget_val = st.number_input(
         "Budget mensuel (€)",
         min_value=5,
@@ -29,13 +29,15 @@ try:
         key="budget_input"
     )
 
-    # Créer manager si pas encore existant
+    # Créer le manager une seule fois
     if "manager" not in st.session_state:
         st.session_state.manager = BudgetManager(budget_val)
+
+    # Toujours utiliser le manager du session_state
     manager = st.session_state.manager
 
     # Affichage dynamique du budget
-    col1, col2 = st.columns([1, 2])
+    col1, col2 = st.columns([1,2])
     with col1:
         st.metric("Dépense actuelle", f"{manager.depense:.2f} €")
         st.metric("Budget restant", f"{manager.reste():.2f} €")
@@ -96,7 +98,7 @@ try:
         grilles = []
         for _ in range(nb_grilles):
             if manager.peut_jouer():
-                manager.jouer()
+                manager.jouer()  # ✅ Dépense mise à jour
                 nums, stars = generer_grille_intelligente()
                 grilles.append((nums, stars))
                 sauvegarder_grille(nums, stars)
