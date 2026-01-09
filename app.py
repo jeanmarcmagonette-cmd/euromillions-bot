@@ -42,7 +42,7 @@ try:
         st.metric("Dépense actuelle", f"{manager.depense:.2f} €")
         st.metric("Budget restant", f"{manager.reste():.2f} €")
     with col2:
-        progress = min(manager.depense / budget_val, 1.0)
+        progress = min(manager.depense / manager.budget, 1.0)  # ✅ utiliser manager.budget
         st.progress(progress)
         if progress >= 1:
             st.error("🚫 Budget mensuel atteint")
@@ -98,7 +98,7 @@ try:
         grilles = []
         for _ in range(nb_grilles):
             if manager.peut_jouer():
-                manager.jouer()  # ✅ Dépense mise à jour
+                manager.jouer()  # ✅ dépense mise à jour
                 nums, stars = generer_grille_intelligente()
                 grilles.append((nums, stars))
                 sauvegarder_grille(nums, stars)
