@@ -3,187 +3,131 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import json
+import time
 
-st.set_page_config(
-    page_title="🤖 Euromillions Bot Pro",
-    layout="wide"
-)
-
-st.title("🤖 Euromillions Bot Pro")
-st.write("Gère ton budget, génère des grilles intelligentes et simule des tirages Euromillions de manière responsable.")
+st.set_page_config(page_title="🤖 Euromillions Bot Pro", layout="wide")
+st.title("🤖 Euromillions Bot Pro – Version Ultra Pro")
+st.write("Gère ton budget, génère des grilles intelligentes et simule des tirages Euromillions avec style !")
 st.divider()
 
 # -----------------------------
-# Gestion du budget
+# Initialisation BudgetManager
 # -----------------------------
-st.subheader("💰 Budget")
-try:
-    from core.budget import BudgetManager
+from core.budget import BudgetManager
 
-    # Valeur initiale
-    budget_val = st.number_input(
-        "Budget mensuel (€)",
-        min_value=5,
-        max_value=200,
-        value=20,
-        key="budget_input"
-    )
+budget_val = st.sidebar.number_input("Budget mensuel (€)", min_value=5, max_value=200, value=20)
 
-    # Créer le manager une seule fois
-    if "manager" not in st.session_state:
-        st.session_state.manager = BudgetManager(budget_val)
+if "manager" not in st.session_state:
+    st.session_state.manager = BudgetManager(budget_val)
+manager = st.session_state.manager
 
-    # Toujours utiliser le manager du session_state
-    manager = st.session_state.manager
-
-    # Affichage dynamique du budget
-    col1, col2 = st.columns([1,2])
-    with col1:
-        st.metric("Dépense actuelle", f"{manager.depense:.2f} €")
-        st.metric("Budget restant", f"{manager.reste():.2f} €")
-    with col2:
-        progress = min(manager.depense / manager.budget, 1.0)  # ✅ utiliser manager.budget
-        st.progress(progress)
-        if progress >= 1:
-            st.error("🚫 Budget mensuel atteint")
-
-except Exception as e:
-    st.error(f"Erreur BudgetManager : {e}")
-    manager = None
-
-st.divider()
-
-# -----------------------------
-# Bouton réinitialiser tout
-# -----------------------------
-st.subheader("⚙️ Réinitialiser l'app")
+# Bouton Réinitialiser
 history_file = "data/history.json"
-
-if st.button("🔄 Réinitialiser tout", key="btn_reset"):
-    # Supprimer le budget manager
+if st.sidebar.button("🔄 Réinitialiser tout"):
     if "manager" in st.session_state:
         del st.session_state.manager
-
-    # Vider l'historique
     if os.path.exists(history_file):
         with open(history_file, "w") as f:
             json.dump([], f)
-
-    st.success("✅ Budget et historique remis à zéro. Rechargez l'app si nécessaire pour voir les changements.")
-
-st.divider()
+    st.sidebar.success("✅ Budget et historique remis à zéro. Rechargez la page.")
 
 # -----------------------------
-# Générateur de grilles intelligentes avec historique
+# Layout 3 colonnes
 # -----------------------------
-st.subheader("🎯 Grilles intelligentes")
-try:
+col_budget, col_grilles, col_simulation = st.columns([1,2,2])
+
+# -----------------------------
+# Colonne 1 : Budget stylé
+# -----------------------------
+with col_budget:
+    st.subheader("💰 Budget")
+    depense = manager.depense
+    restant = manager.reste()
+
+    # Jauge colorée selon dépense
+    progress = min(depense / manager.budget, 1.0)
+    if progress < 0.5:
+        color = "green"
+    elif progress < 0.8:
+        color = "orange"
+    else:
+        color = "red"
+
+    st.markdown(f"<h3>Dépense actuelle : {depense:.2f} €</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3>Budget restant : {restant:.2f} €</h3>", unsafe_allow_html=True)
+    st.progress(progress)
+
+    if progress >= 1:
+        st.error("🚫 Budget dépassé ! Plus de grilles possibles.")
+
+# -----------------------------
+# Colonne 2 : Grilles + Historique
+# -----------------------------
+with col_grilles:
+    st.subheader("🎯 Générateur de grilles")
     from core.generator import generer_grille_intelligente
     from core.storage import sauvegarder_grille, charger_historique
 
-    # Slider pour le nombre de grilles
-    nb_grilles = st.slider(
-        "Nombre de grilles à générer",
-        min_value=1,
-        max_value=10,
-        value=3,
-        step=1,
-        key="slider_nb_grilles"
-    )
-
-    # Placeholder pour affichage dynamique
-    grille_placeholder = st.empty()
-
-    if st.button("🧠 Générer grilles", key="btn_generer_grilles"):
+    nb_grilles = st.slider("Nombre de grilles", 1, 10, 3, key="slider_nb_grilles")
+    if st.button("🧠 Générer grilles"):
         grilles = []
         for _ in range(nb_grilles):
             if manager.peut_jouer():
-                manager.jouer()  # ✅ dépense mise à jour
+                manager.jouer()
                 nums, stars = generer_grille_intelligente()
                 grilles.append((nums, stars))
                 sauvegarder_grille(nums, stars)
 
-        # Affichage dynamique
-        with grille_placeholder.container():
-            if grilles:
-                st.success(f"💸 Budget restant : {manager.reste():.2f} €")
-                for i, (nums, stars) in enumerate(grilles, 1):
-                    st.write(f"Grille {i}: Numéros {nums} ⭐ Étoiles {stars}")
-            else:
-                st.error("🚫 Budget dépassé — impossible de générer des grilles")
-
-    # Afficher l'historique complet
-    historique = charger_historique()
-    hist_placeholder = st.empty()
-    with hist_placeholder.container():
-        if historique:
-            st.write("📜 **Historique complet des grilles jouées**")
-            for i, g in enumerate(historique, 1):
-                st.write(f"{i}: Numéros {g['numeros']} ⭐ Étoiles {g['etoiles']}")
-            # ROI simulé
-            cout_total = len(historique) * 2.5
-            gains_total = 0
-            st.metric("💸 Dépense totale", f"{cout_total:.2f} €")
-            st.metric("📈 ROI simulé", f"{gains_total - cout_total:.2f} €")
+        if grilles:
+            for i, (nums, stars) in enumerate(grilles, 1):
+                st.success(f"Grille {i}: Numéros {nums} ⭐ Étoiles {stars}")
         else:
-            st.info("Aucune grille jouée pour l'instant.")
+            st.error("🚫 Budget dépassé — impossible de générer des grilles")
 
-except Exception as e:
-    st.error(f"Erreur génération intelligente avec historique : {e}")
-
-st.divider()
+    # Historique stylé
+    historique = charger_historique()
+    if historique:
+        st.subheader("📜 Historique des grilles")
+        for g in historique[-10:][::-1]:  # dernier 10 grilles
+            st.info(f"Numéros {g['numeros']} ⭐ Étoiles {g['etoiles']}")
+        # ROI et dépenses animées
+        cout_total = len(historique)*2.5
+        gains_total = 0
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("💸 Dépense totale", f"{cout_total:.2f} €")
+        with col2:
+            st.metric("📈 ROI simulé", f"{gains_total - cout_total:.2f} €",
+                      delta_color="inverse" if gains_total - cout_total < 0 else "normal")
+    else:
+        st.info("Aucune grille jouée pour l'instant.")
 
 # -----------------------------
-# Statistiques des numéros
+# Colonne 3 : Simulation Monte Carlo + Stats stylées
 # -----------------------------
-st.subheader("📊 Statistiques")
-try:
+with col_simulation:
+    st.subheader("🧪 Simulation Monte Carlo")
+    from ai.simulation import simuler
     from stats.analysis import frequences_numeros
 
-    freq = frequences_numeros() if 'frequences_numeros' in globals() else pd.Series(dtype=int)
-    if freq is not None and not freq.empty:
-        fig, ax = plt.subplots(figsize=(10,4))
-        freq.plot(kind="bar", ax=ax, color="skyblue")
+    nb_sim = st.slider("Grilles simulées", 1000, 100_000, 10_000, step=1000)
+    if st.button("🚀 Lancer simulation", key="btn_simuler"):
+        gains, cout = simuler(nb_sim)
+        col1, col2, col3 = st.columns(3)
+        col1.metric("💸 Coût total", f"{cout:,.2f} €")
+        col2.metric("🏆 Gains simulés", f"{gains:,.2f} €")
+        col3.metric("📉 Résultat net", f"{gains - cout:,.2f} €",
+                    delta_color="inverse" if gains - cout < 0 else "normal")
+        st.warning("Simulation Monte Carlo — l'espérance est négative.")
+
+    # Statistiques des numéros
+    freq = frequences_numeros()
+    if not freq.empty:
+        fig, ax = plt.subplots(figsize=(8,3))
+        freq.plot(kind="bar", ax=ax, color="lightblue")
         ax.set_title("Fréquence des numéros joués")
         ax.set_xlabel("Numéro")
         ax.set_ylabel("Occurrences")
         st.pyplot(fig)
     else:
-        st.info("Pas encore assez de données pour afficher des stats.")
-except Exception as e:
-    st.error(f"Erreur statistiques : {e}")
-
-st.divider()
-
-# -----------------------------
-# Simulation Monte Carlo
-# -----------------------------
-st.subheader("🧪 Simulation Monte Carlo")
-try:
-    from ai.simulation import simuler
-
-    nb = st.slider(
-        "Nombre de grilles simulées pour la simulation",
-        min_value=1000,
-        max_value=100_000,
-        step=1000,
-        value=10_000,
-        key="slider_simulation"
-    )
-
-    if st.button("🚀 Lancer simulation", key="btn_simuler"):
-        gains, cout = simuler(nb)
-        col1, col2, col3 = st.columns(3)
-        col1.metric("💸 Coût total", f"{cout:,.2f} €")
-        col2.metric("🏆 Gains simulés", f"{gains:,.2f} €")
-        col3.metric("📉 Résultat net", f"{gains - cout:,.2f} €")
-        st.warning(
-            "Cette simulation montre l'espérance négative du jeu.\n"
-            "Même avec beaucoup de grilles, perdre est la norme."
-        )
-
-except Exception as e:
-    st.error(f"Erreur simulation : {e}")
-
-st.divider()
-st.info("✅ App prête à être utilisée sur Streamlit Cloud, avec budget dynamique, grilles multiples, historique et bouton de réinitialisation.")
+        st.info("Pas assez de données pour afficher des stats.")
