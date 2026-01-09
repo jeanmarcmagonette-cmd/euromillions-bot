@@ -20,6 +20,7 @@ st.subheader("💰 Budget")
 try:
     from core.budget import BudgetManager
 
+    # Budget initial
     budget_val = st.number_input(
         "Budget mensuel (€)",
         min_value=5,
@@ -28,16 +29,16 @@ try:
         key="budget_input"
     )
 
-    # ✅ BudgetManager persistant avec session_state
+    # Créer manager si pas encore existant
     if "manager" not in st.session_state:
         st.session_state.manager = BudgetManager(budget_val)
     manager = st.session_state.manager
 
-    # Colonnes pour budget et jauge
+    # Affichage dynamique du budget
     col1, col2 = st.columns([1, 2])
     with col1:
-        st.write(f"Dépense actuelle : {manager.depense:.2f} €")
-        st.write(f"Budget restant : {manager.reste():.2f} €")
+        st.metric("Dépense actuelle", f"{manager.depense:.2f} €")
+        st.metric("Budget restant", f"{manager.reste():.2f} €")
     with col2:
         progress = min(manager.depense / budget_val, 1.0)
         st.progress(progress)
@@ -183,4 +184,4 @@ except Exception as e:
     st.error(f"Erreur simulation : {e}")
 
 st.divider()
-st.info("✅ App prête à être utilisée sur Streamlit Cloud, avec budget, grilles multiples, historique et bouton de réinitialisation.")
+st.info("✅ App prête à être utilisée sur Streamlit Cloud, avec budget dynamique, grilles multiples, historique et bouton de réinitialisation.")
