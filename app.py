@@ -25,9 +25,14 @@ try:
         value=20,
         key="budget_input"
     )
-    manager = BudgetManager(budget_val)
 
-    col1, col2 = st.columns([1,2])
+    # ✅ BudgetManager persistant avec session_state
+    if "manager" not in st.session_state:
+        st.session_state.manager = BudgetManager(budget_val)
+    manager = st.session_state.manager
+
+    # Colonnes pour budget et jauge
+    col1, col2 = st.columns([1, 2])
     with col1:
         st.write(f"Dépense actuelle : {manager.depense:.2f} €")
         st.write(f"Budget restant : {manager.reste():.2f} €")
@@ -83,7 +88,7 @@ try:
             else:
                 st.error("🚫 Budget dépassé — impossible de générer des grilles")
 
-    # Affichage historique
+    # Afficher l'historique complet
     historique = charger_historique()
     hist_placeholder = st.empty()
     with hist_placeholder.container():
@@ -157,4 +162,4 @@ except Exception as e:
     st.error(f"Erreur simulation : {e}")
 
 st.divider()
-st.info("✅ App prête à être utilisée sur Streamlit Cloud, avec grilles multiples, historique et budget respecté.")
+st.info("✅ App prête à être utilisée sur Streamlit Cloud, avec budget, grilles multiples et historique.")
