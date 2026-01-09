@@ -1,25 +1,34 @@
 import json
-from datetime import datetime
-from pathlib import Path
+import os
 
-DATA_PATH = Path("data/history.json")
+HISTORY_FILE = "data/history.json"
 
-def sauvegarder_grille(numeros, etoiles, prix):
-    DATA_PATH.parent.mkdir(exist_ok=True)
-
-    if DATA_PATH.exists():
-        with open(DATA_PATH, "r") as f:
-            data = json.load(f)
-    else:
-        data = []
+def sauvegarder_grille(numeros, etoiles):
+    """Ajoute une grille au fichier history.json"""
+    os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
+    
+    data = []
+    if os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, "r") as f:
+            try:
+                data = json.load(f)
+            except:
+                data = []
 
     data.append({
-        "date": datetime.now().isoformat(),
         "numeros": numeros,
-        "etoiles": etoiles,
-        "prix": prix,
-        "gain": 0
+        "etoiles": etoiles
     })
 
-    with open(DATA_PATH, "w") as f:
-        json.dump(data, f, indent=2)
+    with open(HISTORY_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def charger_historique():
+    """Retourne la liste des grilles jouées"""
+    if os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, "r") as f:
+            try:
+                return json.load(f)
+            except:
+                return []
+    return []

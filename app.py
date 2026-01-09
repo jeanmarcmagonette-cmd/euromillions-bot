@@ -38,13 +38,18 @@ try:
 except Exception as e:
     st.error(f"Erreur BudgetManager : {e}")
     BudgetManager = None
+    st.divider()
+st.subheader("🎯 Grilles intelligentes avec historique")
 
-st.divider()
-
-# --- Générateur de plusieurs grilles intelligentes ---
-st.subheader("🎯 Générateur de grilles intelligentes")
 try:
     from core.generator import generer_grille_intelligente
+    from core.storage import sauvegarder_grille, charger_historique
+    from core.budget import BudgetManager
+
+    # réutilisation du manager
+    if manager is None:
+        budget_val = 20
+        manager = BudgetManager(budget_val)
 
     nb_grilles = st.slider("Nombre de grilles à générer", min_value=1, max_value=10, value=3, step=1)
 
@@ -55,6 +60,7 @@ try:
                 manager.jouer()
                 nums, stars = generer_grille_intelligente()
                 grilles.append((nums, stars))
+                sauvegarder_grille(nums, stars)
         if grilles:
             for i, (nums, stars) in enumerate(grilles, 1):
                 st.success(f"Grille {i}: Numéros {nums} ⭐ Étoiles {stars}")
@@ -62,10 +68,24 @@ try:
         else:
             st.error("🚫 Budget dépassé — impossible de générer des grilles")
 
-except Exception as e:
-    st.error(f"Erreur génération intelligente : {e}")
+    # afficher l'historique complet
+    historique = charger_historique()
+    if historique:
+        st.write("📜 **Historique complet des grilles jouées**")
+        for i, g in enumerate(historique, 1):
+            st.write(f"{i}: Numéros {g['numeros']} ⭐ Étoiles {g['etoiles']}")
+    else:
+        st.info("Aucune grille jouée pour l'instant.")
 
-st.divider()
+except Exception as e:
+    st.error(f"Erreur génération intelligente avec historique : {e}")
+
+# ROI simulé
+cout_total = len(historique) * 2.5
+gains_total = 0  # ici tu peux simuler ou ajouter de vrais gains
+st.metric("💸 Dépense totale", f"{cout_total:.2f} €")
+st.metric("📈 ROI simulé", f"{gains_total - cout_total:.2f} €")
+
 
 # --- Statistiques des numéros ---
 st.subheader("📊 Statistiques")
