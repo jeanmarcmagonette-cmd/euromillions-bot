@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import json
-import time
 
 st.set_page_config(page_title="🤖 Euromillions Bot Pro", layout="wide")
 st.title("🤖 Euromillions Bot Pro – Version Ultra Pro")
@@ -21,7 +20,9 @@ if "manager" not in st.session_state:
     st.session_state.manager = BudgetManager(budget_val)
 manager = st.session_state.manager
 
+# -----------------------------
 # Bouton Réinitialiser
+# -----------------------------
 history_file = "data/history.json"
 if st.sidebar.button("🔄 Réinitialiser tout"):
     if "manager" in st.session_state:
@@ -37,28 +38,36 @@ if st.sidebar.button("🔄 Réinitialiser tout"):
 col_budget, col_grilles, col_simulation = st.columns([1,2,2])
 
 # -----------------------------
-# Colonne 1 : Budget stylé
+# Colonne 1 : Budget stylé avec live update
 # -----------------------------
 with col_budget:
     st.subheader("💰 Budget")
-    depense = manager.depense
-    restant = manager.reste()
+    
+    # Placeholder pour affichage dynamique
+    budget_placeholder = st.empty()
 
-    # Jauge colorée selon dépense
-    progress = min(depense / manager.budget, 1.0)
-    if progress < 0.5:
-        color = "green"
-    elif progress < 0.8:
-        color = "orange"
-    else:
-        color = "red"
+    def afficher_budget():
+        depense = manager.depense
+        restant = manager.reste()
+        progress = min(depense / manager.budget, 1.0)
 
-    st.markdown(f"<h3>Dépense actuelle : {depense:.2f} €</h3>", unsafe_allow_html=True)
-    st.markdown(f"<h3>Budget restant : {restant:.2f} €</h3>", unsafe_allow_html=True)
-    st.progress(progress)
+        # Couleur dynamique
+        if progress < 0.5:
+            color = "green"
+        elif progress < 0.8:
+            color = "orange"
+        else:
+            color = "red"
 
-    if progress >= 1:
-        st.error("🚫 Budget dépassé ! Plus de grilles possibles.")
+        with budget_placeholder.container():
+            st.markdown(f"<h3>Dépense actuelle : {depense:.2f} €</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3>Budget restant : {restant:.2f} €</h3>", unsafe_allow_html=True)
+            st.progress(progress)
+            if progress >= 1:
+                st.error("🚫 Budget mensuel atteint")
+
+    # Affichage initial
+    afficher_budget()
 
 # -----------------------------
 # Colonne 2 : Grilles + Historique
@@ -69,14 +78,18 @@ with col_grilles:
     from core.storage import sauvegarder_grille, charger_historique
 
     nb_grilles = st.slider("Nombre de grilles", 1, 10, 3, key="slider_nb_grilles")
-    if st.button("🧠 Générer grilles"):
+    
+    if st.button("🧠 Générer grilles", key="btn_generer_grilles"):
         grilles = []
         for _ in range(nb_grilles):
             if manager.peut_jouer():
-                manager.jouer()
+                manager.jouer()  # Dépense augmente immédiatement
                 nums, stars = generer_grille_intelligente()
                 grilles.append((nums, stars))
                 sauvegarder_grille(nums, stars)
+
+        # Mise à jour live de la colonne Budget
+        afficher_budget()
 
         if grilles:
             for i, (nums, stars) in enumerate(grilles, 1):
@@ -90,7 +103,6 @@ with col_grilles:
         st.subheader("📜 Historique des grilles")
         for g in historique[-10:][::-1]:  # dernier 10 grilles
             st.info(f"Numéros {g['numeros']} ⭐ Étoiles {g['etoiles']}")
-        # ROI et dépenses animées
         cout_total = len(historique)*2.5
         gains_total = 0
         col1, col2 = st.columns(2)
@@ -122,7 +134,7 @@ with col_simulation:
 
     # Statistiques des numéros
     freq = frequences_numeros()
-    if not freq.empty:
+    if freq is not None and not freq.empty:
         fig, ax = plt.subplots(figsize=(8,3))
         freq.plot(kind="bar", ax=ax, color="lightblue")
         ax.set_title("Fréquence des numéros joués")
