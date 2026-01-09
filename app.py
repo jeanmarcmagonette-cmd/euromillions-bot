@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import json
+import time  # ✅ pour l'animation compteur
 
 st.set_page_config(page_title="🤖 Euromillions Bot Pro", layout="wide")
 st.title("🤖 Euromillions Bot Pro – Version Ultra Pro")
@@ -42,7 +43,7 @@ col_budget, col_grilles, col_simulation = st.columns([1,2,2])
 # -----------------------------
 with col_budget:
     st.subheader("💰 Budget")
-    budget_placeholder = st.empty()  # placeholder pour le budget live
+    budget_placeholder = st.empty()  # placeholder pour la colonne Budget
 
 def afficher_budget(depense_actuelle=None):
     """Affiche le budget dans la colonne Budget."""
@@ -90,7 +91,7 @@ with col_grilles:
                 # Animation compteur dépense
                 for val in range(int(old_depense*100), int(new_depense*100)+1, 5):  # incréments 0,05 €
                     afficher_budget(depense_actuelle=val/100)
-                    st.sleep(0.01)  # délai pour effet compteur
+                    time.sleep(0.01)  # ✅ animation avec time.sleep
 
                 # Génération de la grille
                 nums, stars = generer_grille_intelligente()
