@@ -71,3 +71,15 @@ except Exception as e:
 
 st.divider()
 st.info("✅ L'app est prête à être déployée sur Streamlit Cloud et ne devrait jamais afficher une page blanche.")
+st.divider()
+st.subheader("🎲 Générateur de grilles")
+
+try:
+    from core.generator import generer_grille
+
+    if st.button("🎰 Générer une grille"):
+        nums, stars = generer_grille()
+        st.success(f"Numéros : {nums} ⭐ Étoiles : {stars}")
+except Exception as e:
+    st.error(f"Erreur générateur de grille : {e}")
+
